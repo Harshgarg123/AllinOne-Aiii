@@ -209,29 +209,46 @@ export default function RagMode() {
   };
 
   return (
-  <div className="h-full flex gap-4">
+  <div className="h-full flex bg-gray-50 relative">
+
+    {/* MOBILE OVERLAY */}
+    {showSidebar && (
+      <div
+        className="fixed inset-0 bg-black/40 z-20 md:hidden"
+        onClick={() => setShowSidebar(false)}
+      />
+    )}
 
     {/* SIDEBAR */}
-    <div className="w-80 bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col">
-      <h3 className="text-sm font-semibold text-gray-700 mb-4">
-        Your Documents
-      </h3>
+    <div
+      className={`fixed md:static z-30 md:z-auto
+      top-0 left-0 h-full w-72 bg-white border-r border-gray-200
+      transform transition-transform duration-300
+      ${showSidebar ? 'translate-x-0' : '-translate-x-full'}
+      md:translate-x-0 flex flex-col`}
+    >
+      <div className="p-4 border-b">
+        <h3 className="text-lg font-semibold">Your Documents</h3>
+      </div>
 
-      <div className="flex-1 overflow-y-auto space-y-2">
+      <div className="flex-1 overflow-y-auto p-3 space-y-2">
         {documents.map((doc) => (
           <div
             key={doc.id}
-            className={`p-3 rounded-lg cursor-pointer transition group ${
+            onClick={() => {
+              setSelectedDoc(doc);
+              setShowSidebar(false);
+            }}
+            className={`p-3 rounded-xl cursor-pointer transition group ${
               selectedDoc?.id === doc.id
-                ? 'bg-blue-50 border-2 border-blue-500'
-                : 'bg-gray-50 border-2 border-transparent hover:border-gray-300'
+                ? 'bg-blue-50 border border-blue-400'
+                : 'bg-gray-100 hover:bg-gray-200'
             }`}
-            onClick={() => setSelectedDoc(doc)}
           >
-            <div className="flex items-start justify-between">
+            <div className="flex justify-between items-start">
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                <FileText size={16} className="text-gray-400 flex-shrink-0" />
-                <span className="text-sm font-medium text-gray-700 truncate">
+                <FileText size={16} className="text-gray-400" />
+                <span className="text-sm font-medium truncate">
                   {doc.filename}
                 </span>
               </div>
@@ -240,7 +257,7 @@ export default function RagMode() {
                   e.stopPropagation();
                   handleDeleteDocument(doc.id);
                 }}
-                className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 transition"
+                className="opacity-0 group-hover:opacity-100 text-red-500 ml-2"
               >
                 <Trash2 size={16} />
               </button>
@@ -251,106 +268,117 @@ export default function RagMode() {
     </div>
 
     {/* MAIN CONTENT */}
-    <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col">
 
-      {/* UPLOAD SECTION AT TOP */}
-      <div className="mb-6">
-        <label className="block w-full cursor-pointer">
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-500 hover:bg-blue-50 transition text-center">
-            <Upload className="mx-auto mb-2 text-gray-400" size={32} />
-            <p className="text-sm text-gray-600">
-              {uploading ? 'Uploading...' : 'Click to upload document'}
-            </p>
-            <p className="text-xs text-gray-400 mt-1">
-              TXT, MD, JSON, CSV, PDF
-            </p>
-          </div>
-          <input
-            type="file"
-            accept=".txt,.md,.json,.csv,.pdf"
-            onChange={handleFileUpload}
-            className="hidden"
-            disabled={uploading}
-          />
-        </label>
+      {/* MOBILE HEADER */}
+      <div className="flex items-center justify-between px-4 py-4 border-b bg-white md:hidden">
+        <button onClick={() => setShowSidebar(true)}>
+          <Menu size={22} />
+        </button>
+        <h2 className="font-semibold">RAG Mode</h2>
+        <div />
       </div>
 
-      {/* DOCUMENT VIEW */}
-      {selectedDoc ? (
-        <>
-          <div className="mb-4 flex-shrink-0">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              {selectedDoc.filename}
-            </h2>
-            <button
-              onClick={handleSummarize}
-              disabled={summarizing}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg disabled:opacity-50"
-            >
-              {summarizing ? (
-                <Loader2 className="animate-spin" size={16} />
-              ) : (
-                <Sparkles size={16} />
-              )}
-              {summarizing ? 'Summarizing...' : 'Summarize'}
-            </button>
-          </div>
+      <div className="flex-1 flex flex-col bg-white md:rounded-none md:border-l border-gray-200 p-4 md:p-6">
 
-          <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-            {selectedDoc.summary && (
-              <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                <h3 className="font-semibold text-purple-900 mb-2">
-                  Summary
-                </h3>
-                <p className="text-sm whitespace-pre-wrap">
-                  {selectedDoc.summary}
-                </p>
-              </div>
-            )}
+        {/* UPLOAD */}
+        <div className="mb-6">
+          <label className="block w-full cursor-pointer">
+            <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 hover:border-blue-500 hover:bg-blue-50 transition text-center">
+              <Upload className="mx-auto mb-2 text-gray-400" size={28} />
+              <p className="text-sm font-medium text-gray-700">
+                {uploading ? 'Uploading...' : 'Upload Document'}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                TXT, MD, JSON, CSV, PDF
+              </p>
+            </div>
+            <input
+              type="file"
+              accept=".txt,.md,.json,.csv,.pdf"
+              onChange={handleFileUpload}
+              className="hidden"
+              disabled={uploading}
+            />
+          </label>
+        </div>
 
-            {answer && (
-              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <h3 className="font-semibold text-blue-900 mb-2">
-                  Answer
-                </h3>
-                <p className="text-sm whitespace-pre-wrap">
-                  {answer}
-                </p>
-              </div>
-            )}
-          </div>
+        {selectedDoc ? (
+          <>
+            {/* HEADER */}
+            <div className="mb-4">
+              <h2 className="text-xl md:text-2xl font-bold mb-3">
+                {selectedDoc.filename}
+              </h2>
 
-          <div className="mt-4 flex-shrink-0">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                placeholder="Ask a question..."
-                className="flex-1 px-4 py-2 border rounded-lg"
-              />
               <button
-                onClick={handleAskQuestion}
-                disabled={loading || !question.trim()}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50"
+                onClick={handleSummarize}
+                disabled={summarizing}
+                className="px-4 py-2 bg-purple-600 text-white rounded-xl disabled:opacity-50 flex items-center gap-2"
               >
-                {loading ? (
+                {summarizing ? (
                   <Loader2 className="animate-spin" size={16} />
                 ) : (
-                  <Search size={16} />
+                  <Sparkles size={16} />
                 )}
-                Ask
+                {summarizing ? 'Summarizing...' : 'Summarize'}
               </button>
             </div>
+
+            {/* CONTENT */}
+            <div className="flex-1 overflow-y-auto space-y-4">
+
+              {selectedDoc.summary && (
+                <div className="p-4 bg-purple-50 rounded-xl border border-purple-200">
+                  <h3 className="font-semibold mb-2">Summary</h3>
+                  <p className="text-sm whitespace-pre-wrap">
+                    {selectedDoc.summary}
+                  </p>
+                </div>
+              )}
+
+              {answer && (
+                <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                  <h3 className="font-semibold mb-2">Answer</h3>
+                  <p className="text-sm whitespace-pre-wrap">
+                    {answer}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* QUESTION INPUT */}
+            <div className="mt-4">
+              <div className="flex gap-2">
+                <input
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  placeholder="Ask about this document..."
+                  className="flex-1 px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+                <button
+                  onClick={handleAskQuestion}
+                  disabled={loading || !question.trim()}
+                  className="px-4 py-3 bg-blue-600 text-white rounded-xl disabled:opacity-50 flex items-center justify-center"
+                >
+                  {loading ? (
+                    <Loader2 className="animate-spin" size={18} />
+                  ) : (
+                    <Search size={18} />
+                  )}
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-gray-400 text-center">
+            Upload or select a document to begin
           </div>
-        </>
-      ) : (
-        <div className="flex-1 flex items-center justify-center text-gray-400">
-          <p>Upload or select a document to get started</p>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   </div>
 );
+
 
 }
