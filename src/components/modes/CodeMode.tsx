@@ -13,7 +13,6 @@ export default function CodeMode() {
     if (!task.trim()) return;
 
     const apiKey = localStorage.getItem('user_api_key');
-
     if (!apiKey) {
       alert('Please enter your Groq API key first.');
       return;
@@ -35,7 +34,7 @@ export default function CodeMode() {
             messages: [
               {
                 role: 'system',
-                content: `You are an expert programmer. Generate clean, efficient, and well-commented code in ${language}. Always provide the code inside triple backticks first, then a brief explanation.`,
+                content: `You are an expert programmer. Generate clean, efficient, well-commented code in ${language}. Always provide the code inside triple backticks first, then a brief explanation.`,
               },
               {
                 role: 'user',
@@ -55,7 +54,6 @@ export default function CodeMode() {
 
       const aiResponse = data.choices[0].message.content;
 
-      // Extract code block
       const codeMatch = aiResponse.match(/```[\w]*\n([\s\S]*?)```/);
 
       if (codeMatch) {
@@ -69,8 +67,7 @@ export default function CodeMode() {
       }
     } catch (err) {
       alert(
-        'Error: ' +
-          (err instanceof Error ? err.message : 'Unknown error')
+        'Error: ' + (err instanceof Error ? err.message : 'Unknown error')
       );
     } finally {
       setLoading(false);
@@ -84,9 +81,11 @@ export default function CodeMode() {
   };
 
   return (
-    <div className="h-full flex gap-4">
-      <div className="w-96 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">
+    <div className="h-full flex flex-col md:flex-row gap-4">
+
+      {/* LEFT PANEL */}
+      <div className="w-full md:w-96 bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+        <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-6">
           Code Assistant
         </h2>
 
@@ -98,7 +97,7 @@ export default function CodeMode() {
             <select
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none bg-white"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none bg-white"
             >
               <option value="javascript">JavaScript</option>
               <option value="typescript">TypeScript</option>
@@ -120,9 +119,9 @@ export default function CodeMode() {
             <textarea
               value={task}
               onChange={(e) => setTask(e.target.value)}
-              placeholder="e.g., Create a function that sorts an array of objects by a specific property"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none resize-none"
-              rows={6}
+              placeholder="Describe what you want to build..."
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none resize-none"
+              rows={5}
             />
           </div>
 
@@ -146,16 +145,17 @@ export default function CodeMode() {
         </div>
       </div>
 
-      <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col">
+      {/* RIGHT PANEL */}
+      <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 flex flex-col">
         {code ? (
           <>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-gray-900">
+              <h3 className="text-lg md:text-xl font-bold text-gray-900">
                 Generated Code
               </h3>
               <button
                 onClick={handleCopy}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition"
+                className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition text-sm"
               >
                 {copied ? (
                   <>
@@ -173,7 +173,7 @@ export default function CodeMode() {
 
             <div className="flex-1 overflow-y-auto space-y-4">
               <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
-                <pre className="text-sm text-gray-100">
+                <pre className="text-xs md:text-sm text-gray-100 whitespace-pre-wrap">
                   <code>{code}</code>
                 </pre>
               </div>
@@ -191,9 +191,9 @@ export default function CodeMode() {
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-gray-400">
-            <div className="text-center">
-              <Code2 size={64} className="mx-auto mb-4 opacity-50" />
+          <div className="flex-1 flex items-center justify-center text-gray-400 text-center">
+            <div>
+              <Code2 size={48} className="mx-auto mb-4 opacity-50" />
               <p className="text-lg mb-2">Your AI Coding Assistant</p>
               <p className="text-sm">
                 Describe what you want to build and get instant code

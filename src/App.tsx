@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
-import RagMode from './components/modes/RagMode';
-import ChatMode from './components/modes/ChatMode';
-import BlogMode from './components/modes/BlogMode';
-import CodeMode from './components/modes/CodeMode';
-
+import { useState, useEffect } from "react";
+import RagMode from "./components/modes/RagMode";
+import ChatMode from "./components/modes/ChatMode";
+import BlogMode from "./components/modes/BlogMode";
+import CodeMode from "./components/modes/CodeMode";
 
 import {
   FileText,
@@ -12,16 +11,19 @@ import {
   Code2,
   Sparkles,
   Key,
-} from 'lucide-react';
+  Menu,
+  X,
+} from "lucide-react";
 
-type Mode = 'rag' | 'chat' | 'blog' | 'code';
+type Mode = "rag" | "chat" | "blog" | "code";
 
 function App() {
-  const [activeMode, setActiveMode] = useState<Mode>('chat');
-  const [apiKey, setApiKey] = useState('');
+  const [activeMode, setActiveMode] = useState<Mode>("chat");
+  const [apiKey, setApiKey] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    const savedKey = localStorage.getItem('user_api_key');
+    const savedKey = localStorage.getItem("user_api_key");
     if (savedKey) {
       setApiKey(savedKey);
     }
@@ -29,65 +31,90 @@ function App() {
 
   const handleSaveKey = () => {
     if (!apiKey.trim()) {
-      alert('Please enter a valid Groq API key.');
+      alert("Please enter a valid Groq API key.");
       return;
     }
 
-    localStorage.setItem('user_api_key', apiKey.trim());
-    alert('API key saved successfully!');
+    localStorage.setItem("user_api_key", apiKey.trim());
+    alert("API key saved successfully!");
   };
 
   const modes = [
-    { id: 'chat' as Mode, name: 'Chat', icon: MessageSquare },
-    { id: 'rag' as Mode, name: 'RAG', icon: FileText },
-    { id: 'blog' as Mode, name: 'Blog', icon: PenTool },
-    { id: 'code' as Mode, name: 'Code', icon: Code2 },
-   
-
+    { id: "chat" as Mode, name: "Chat", icon: MessageSquare },
+    { id: "rag" as Mode, name: "RAG", icon: FileText },
+    { id: "blog" as Mode, name: "Blog", icon: PenTool },
+    { id: "code" as Mode, name: "Code", icon: Code2 },
   ];
 
   return (
-    <div className="h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
-      <header className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-screen-2xl mx-auto px-6 py-4 flex items-center justify-between">
+    <div className="h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* HEADER */}
+      <header className="bg-white border-b shadow-sm">
+        <div className="max-w-screen-2xl mx-auto px-4 py-3 flex items-center justify-between">
+          
+          {/* Left Section */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg">
-              <Sparkles className="text-white" size={20} />
+            
+            {/* Mobile Menu Button */}
+            <button
+              className="md:hidden"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <Menu size={22} />
+            </button>
+
+            <div className="flex items-center justify-center w-9 h-9 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg">
+              <Sparkles className="text-white" size={18} />
             </div>
+
             <div>
-              <h1 className="text-xl font-bold text-gray-900">
+              <h1 className="text-lg font-bold text-gray-900">
                 AI Assistant Hub
               </h1>
-              <p className="text-xs text-gray-500">
-                Powered by Groq 
+              <p className="text-xs text-gray-500 hidden sm:block">
+                Powered by Groq
               </p>
             </div>
           </div>
 
           {/* API Key Input */}
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-lg">
+            <div className="hidden sm:flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-lg">
               <Key size={16} className="text-gray-500" />
               <input
                 type="password"
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
-                placeholder="Enter Groq API Key"
-                className="bg-transparent outline-none text-sm w-64"
+                placeholder="Groq API Key"
+                className="bg-transparent outline-none text-sm w-40 md:w-64"
               />
             </div>
+
             <button
               onClick={handleSaveKey}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
+              className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-xs md:text-sm"
             >
-              Save Key
+              Save
             </button>
           </div>
         </div>
       </header>
 
-      <div className="flex-1 flex overflow-hidden">
-        <aside className="w-64 bg-white border-r border-gray-200 p-4">
+      <div className="flex flex-1 overflow-hidden">
+        
+        {/* SIDEBAR */}
+        <aside
+          className={`fixed md:static top-0 left-0 h-full w-64 bg-white border-r p-4 z-50 transform transition-transform duration-300
+          ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
+        >
+          {/* Close button for mobile */}
+          <div className="flex justify-between items-center mb-4 md:hidden">
+            <h2 className="font-semibold">Menu</h2>
+            <button onClick={() => setSidebarOpen(false)}>
+              <X size={20} />
+            </button>
+          </div>
+
           <nav className="space-y-2">
             {modes.map((mode) => {
               const Icon = mode.icon;
@@ -96,41 +123,51 @@ function App() {
               return (
                 <button
                   key={mode.id}
-                  onClick={() => setActiveMode(mode.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition font-medium ${
-                    isActive
-                      ? 'bg-blue-50 text-blue-700 border-2 border-blue-500'
-                      : 'text-gray-700 hover:bg-gray-50 border-2 border-transparent'
-                  }`}
+                  onClick={() => {
+                    setActiveMode(mode.id);
+                    setSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition font-medium text-sm
+                    ${
+                      isActive
+                        ? "bg-blue-50 text-blue-700 border border-blue-500"
+                        : "text-gray-700 hover:bg-gray-50 border border-transparent"
+                    }`}
                 >
-                  <Icon size={20} />
+                  <Icon size={18} />
                   {mode.name}
                 </button>
               );
             })}
           </nav>
 
-          <div className="mt-8 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-            <h3 className="font-semibold text-blue-900 mb-2 text-sm">
+          <div className="mt-8 p-3 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-200 text-xs">
+            <h3 className="font-semibold text-blue-900 mb-2">
               Quick Guide
             </h3>
-            <ul className="text-xs text-blue-800 space-y-2">
+            <ul className="text-blue-800 space-y-1">
               <li><strong>Chat:</strong> General AI assistant</li>
               <li><strong>RAG:</strong> Upload & query docs</li>
-              <li><strong>Blog:</strong> Generate blog posts</li>
-              <li><strong>Code:</strong> AI code assistant</li>
-              
+              <li><strong>Blog:</strong> Blog generation</li>
+              <li><strong>Code:</strong> Code assistant</li>
             </ul>
           </div>
         </aside>
 
-        <main className="flex-1 p-6 overflow-hidden">
-          {activeMode === 'rag' && <RagMode />}
-          {activeMode === 'chat' && <ChatMode />}
-          {activeMode === 'blog' && <BlogMode />}
-          {activeMode === 'code' && <CodeMode />}
-          
+        {/* Overlay for mobile */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-30 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
 
+        {/* MAIN CONTENT */}
+        <main className="flex-1 p-4 md:p-6 overflow-auto">
+          {activeMode === "rag" && <RagMode />}
+          {activeMode === "chat" && <ChatMode />}
+          {activeMode === "blog" && <BlogMode />}
+          {activeMode === "code" && <CodeMode />}
         </main>
       </div>
     </div>

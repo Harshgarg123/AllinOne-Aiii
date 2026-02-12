@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Send, Loader2, Plus, Trash2 } from 'lucide-react';
+import { Send, Loader2, Plus, Trash2, Menu } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -18,6 +18,7 @@ export default function ChatMode() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Load from localStorage
@@ -46,15 +47,22 @@ export default function ChatMode() {
       messages: [],
     };
 
-    setConversations([newConv, ...conversations]);
+    setConversations((prev) => [newConv, ...prev]);
     setSelectedId(newConv.id);
+    setShowSidebar(false);
   };
 
   const deleteConversation = (id: string) => {
     if (!confirm('Delete this conversation?')) return;
 
-    setConversations(conversations.filter((c) => c.id !== id));
+    setConversations((prev) => prev.filter((c) => c.id !== id));
     if (selectedId === id) setSelectedId(null);
+  };
+
+  const updateConversation = (id: string, updated: Conversation) => {
+    setConversations((prev) =>
+      prev.map((c) => (c.id === id ? updated : c))
+    );
   };
 
   const handleSend = async () => {
@@ -114,133 +122,166 @@ export default function ChatMode() {
         content: data.choices[0].message.content,
       };
 
-      const finalMessages = [...updatedMessages, assistantMessage];
-
       updateConversation(selectedConv.id, {
         ...selectedConv,
         title:
           selectedConv.messages.length === 0
             ? userMessage.content.slice(0, 40)
             : selectedConv.title,
-        messages: finalMessages,
+        messages: [...updatedMessages, assistantMessage],
       });
     } catch (err) {
       alert(
-        'Error: ' +
-          (err instanceof Error ? err.message : 'Unknown error')
+        'Error: ' + (err instanceof Error ? err.message : 'Unknown error')
       );
     } finally {
       setLoading(false);
     }
   };
 
-  const updateConversation = (id: string, updated: Conversation) => {
-    setConversations(
-      conversations.map((c) => (c.id === id ? updated : c))
-    );
-  };
+ return (
+  <div className="h-full flex bg-gray-50">
 
-  return (
-    <div className="h-full flex gap-4">
-      <div className="w-80 bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col">
+    {/* MOBILE OVERLAY */}
+    {showSidebar && (
+      <div
+        className="fixed inset-0 bg-black/40 z-20 md:hidden"
+        onClick={() => setShowSidebar(false)}
+      />
+    )}
+
+    {/* SIDEBAR */}
+    <div
+      className={`fixed md:static z-30 md:z-auto
+      top-0 left-0 h-full w-72 bg-white border-r border-gray-200
+      transform transition-transform duration-300
+      ${showSidebar ? 'translate-x-0' : '-translate-x-full'}
+      md:translate-x-0 flex flex-col`}
+    >
+      <div className="p-4 border-b">
         <button
           onClick={createNewConversation}
-          className="w-full mb-4 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2 font-medium"
+          className="w-full px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition flex items-center justify-center gap-2 font-medium shadow-sm"
         >
-          <Plus size={20} />
+          <Plus size={18} />
           New Chat
         </button>
+      </div>
 
-        <div className="flex-1 overflow-y-auto space-y-2">
-          {conversations.map((conv) => (
-            <div
-              key={conv.id}
-              onClick={() => setSelectedId(conv.id)}
-              className={`p-3 rounded-lg cursor-pointer transition group ${
-                selectedId === conv.id
-                  ? 'bg-blue-50 border-2 border-blue-500'
-                  : 'bg-gray-50 border-2 border-transparent hover:border-gray-300'
-              }`}
-            >
-              <div className="flex justify-between items-start">
-                <span className="text-sm font-medium line-clamp-2">
-                  {conv.title}
-                </span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteConversation(conv.id);
-                  }}
-                  className="opacity-0 group-hover:opacity-100 text-red-500 ml-2"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
+      <div className="flex-1 overflow-y-auto p-3 space-y-2">
+        {conversations.map((conv) => (
+          <div
+            key={conv.id}
+            onClick={() => {
+              setSelectedId(conv.id);
+              setShowSidebar(false);
+            }}
+            className={`p-3 rounded-xl cursor-pointer transition group ${
+              selectedId === conv.id
+                ? 'bg-blue-50 border border-blue-400'
+                : 'bg-gray-100 hover:bg-gray-200'
+            }`}
+          >
+            <div className="flex justify-between items-start">
+              <span className="text-sm font-medium line-clamp-2">
+                {conv.title}
+              </span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteConversation(conv.id);
+                }}
+                className="opacity-0 group-hover:opacity-100 text-red-500 ml-2"
+              >
+                <Trash2 size={16} />
+              </button>
             </div>
-          ))}
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/* CHAT AREA */}
+    <div className="flex-1 flex flex-col">
+
+      {/* TOP HEADER */}
+      <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b bg-white">
+        <div className="flex items-center gap-3">
+          <button
+            className="md:hidden"
+            onClick={() => setShowSidebar(true)}
+          >
+            <Menu size={22} />
+          </button>
+          <h2 className="font-semibold text-lg">
+            {selectedConv?.title || 'Chat'}
+          </h2>
         </div>
       </div>
 
-      <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col">
-        {selectedConv ? (
-          <>
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
-              {selectedConv.messages.map((msg) => (
+      {selectedConv ? (
+        <>
+          {/* MESSAGES */}
+          <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+            {selectedConv.messages.map((msg) => (
+              <div
+                key={msg.id}
+                className={`flex ${
+                  msg.role === 'user'
+                    ? 'justify-end'
+                    : 'justify-start'
+                }`}
+              >
                 <div
-                  key={msg.id}
-                  className={`flex ${
+                  className={`max-w-[85%] md:max-w-[65%] rounded-2xl px-5 py-3 text-sm shadow-sm ${
                     msg.role === 'user'
-                      ? 'justify-end'
-                      : 'justify-start'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white border border-gray-200 text-gray-900'
                   }`}
                 >
-                  <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                      msg.role === 'user'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-900'
-                    }`}
-                  >
-                    <p className="text-sm whitespace-pre-wrap">
-                      {msg.content}
-                    </p>
-                  </div>
+                  <p className="whitespace-pre-wrap leading-relaxed">
+                    {msg.content}
+                  </p>
                 </div>
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
-
-            <div className="border-t border-gray-200 p-4">
-              <div className="flex gap-2">
-                <input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) =>
-                    e.key === 'Enter' && !loading && handleSend()
-                  }
-                  placeholder="Type your message..."
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-                <button
-                  onClick={handleSend}
-                  disabled={loading || !input.trim()}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center"
-                >
-                  {loading ? (
-                    <Loader2 className="animate-spin" size={20} />
-                  ) : (
-                    <Send size={20} />
-                  )}
-                </button>
               </div>
-            </div>
-          </>
-        ) : (
-          <div className="flex-1 flex items-center justify-center text-gray-400">
-            Select or create a conversation
+            ))}
+            <div ref={messagesEndRef} />
           </div>
-        )}
-      </div>
+
+          {/* INPUT AREA */}
+          <div className="border-t bg-white p-4">
+            <div className="flex gap-3 max-w-4xl mx-auto">
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) =>
+                  e.key === 'Enter' && !loading && handleSend()
+                }
+                placeholder="Type your message..."
+                className="flex-1 px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+              />
+              <button
+                onClick={handleSend}
+                disabled={loading || !input.trim()}
+                className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center shadow-sm"
+              >
+                {loading ? (
+                  <Loader2 className="animate-spin" size={20} />
+                ) : (
+                  <Send size={20} />
+                )}
+              </button>
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="flex-1 flex items-center justify-center text-gray-400">
+          Select or create a conversation
+        </div>
+      )}
     </div>
-  );
+  </div>
+);
+
+
 }

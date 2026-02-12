@@ -1,21 +1,21 @@
-import { useState } from 'react';
-import { Sparkles, Loader2, Copy, Check } from 'lucide-react';
+import { useState } from "react";
+import { Sparkles, Loader2, Copy, Check } from "lucide-react";
 
 export default function BlogMode() {
-  const [topic, setTopic] = useState('');
-  const [tone, setTone] = useState('professional');
-  const [length, setLength] = useState('medium');
-  const [blogContent, setBlogContent] = useState('');
+  const [topic, setTopic] = useState("");
+  const [tone, setTone] = useState("professional");
+  const [length, setLength] = useState("medium");
+  const [blogContent, setBlogContent] = useState("");
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const handleGenerate = async () => {
     if (!topic.trim()) return;
 
-    const apiKey = localStorage.getItem('user_api_key');
+    const apiKey = localStorage.getItem("user_api_key");
 
     if (!apiKey) {
-      alert('Please enter your Groq API key first.');
+      alert("Please enter your Groq API key first.");
       return;
     }
 
@@ -23,30 +23,30 @@ export default function BlogMode() {
 
     try {
       const lengthGuide =
-        length === 'short'
-          ? '300-500 words'
-          : length === 'medium'
-          ? '700-1000 words'
-          : '1500-2000 words';
+        length === "short"
+          ? "300-500 words"
+          : length === "medium"
+          ? "700-1000 words"
+          : "1500-2000 words";
 
       const response = await fetch(
-        'https://api.groq.com/openai/v1/chat/completions',
+        "https://api.groq.com/openai/v1/chat/completions",
         {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
             Authorization: `Bearer ${apiKey}`,
           },
           body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
+            model: "llama-3.3-70b-versatile",
             messages: [
               {
-                role: 'system',
+                role: "system",
                 content:
-                  'You are a professional blog writer who writes structured, engaging, SEO-friendly blog posts with headings and proper formatting.',
+                  "You are a professional blog writer who writes structured, engaging, SEO-friendly blog posts with headings and proper formatting.",
               },
               {
-                role: 'user',
+                role: "user",
                 content: `Write a ${tone} blog about "${topic}" in ${lengthGuide}. Use clear headings, subheadings, and proper paragraph formatting.`,
               },
             ],
@@ -58,14 +58,14 @@ export default function BlogMode() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error?.message || 'Groq API error');
+        throw new Error(data.error?.message || "Groq API error");
       }
 
       setBlogContent(data.choices[0].message.content);
     } catch (err) {
       alert(
-        'Error generating blog: ' +
-          (err instanceof Error ? err.message : 'Unknown error')
+        "Error generating blog: " +
+          (err instanceof Error ? err.message : "Unknown error")
       );
     } finally {
       setLoading(false);
@@ -79,13 +79,17 @@ export default function BlogMode() {
   };
 
   return (
-    <div className="h-full flex gap-4">
-      <div className="w-96 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">
+    <div className="h-full flex flex-col lg:flex-row gap-4">
+      
+      {/* LEFT PANEL */}
+      <div className="w-full lg:w-96 bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-6">
           Blog Generator
         </h2>
 
         <div className="space-y-4">
+          
+          {/* Topic */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Blog Topic
@@ -99,6 +103,7 @@ export default function BlogMode() {
             />
           </div>
 
+          {/* Tone */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Tone
@@ -117,6 +122,7 @@ export default function BlogMode() {
             </select>
           </div>
 
+          {/* Length */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Length
@@ -132,6 +138,7 @@ export default function BlogMode() {
             </select>
           </div>
 
+          {/* Button */}
           <button
             onClick={handleGenerate}
             disabled={loading || !topic.trim()}
@@ -152,16 +159,17 @@ export default function BlogMode() {
         </div>
       </div>
 
-      <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col">
+      {/* RIGHT PANEL */}
+      <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex flex-col min-h-[300px]">
         {blogContent ? (
           <>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-gray-900">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+              <h3 className="text-lg md:text-xl font-bold text-gray-900">
                 Generated Blog
               </h3>
               <button
                 onClick={handleCopy}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition"
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition text-sm"
               >
                 {copied ? (
                   <>
@@ -177,17 +185,17 @@ export default function BlogMode() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto">
-              <div className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+            <div className="flex-1 overflow-y-auto pr-2">
+              <div className="text-gray-700 leading-relaxed whitespace-pre-wrap text-sm md:text-base">
                 {blogContent}
               </div>
             </div>
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center text-gray-400">
-            <div className="text-center">
-              <Sparkles size={64} className="mx-auto mb-4 opacity-50" />
-              <p className="text-lg mb-2">
+            <div className="text-center px-4">
+              <Sparkles size={56} className="mx-auto mb-4 opacity-40" />
+              <p className="text-base md:text-lg mb-2">
                 Ready to create amazing content?
               </p>
               <p className="text-sm">
