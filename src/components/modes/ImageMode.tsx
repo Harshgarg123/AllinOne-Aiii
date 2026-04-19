@@ -72,29 +72,30 @@ export default function ImageMode() {
     if (selectedId === id) setSelectedId(null);
   };
 
-  const handleGenerate = () => {
-    if (!input.trim() || !selectedConv) return;
+  const handleGenerate = async () => {
+    if (!input.trim() || !selectedConv || loading) return;
 
     const prompt = input.trim();
-    const imgUrl = generateImage(prompt);
+    setLoading(true);
 
+    // Add user message with loading state
     const userMsg = {
       id: Date.now().toString(),
-      role: 'user',
+      role: 'user' as const,
       image: '',
       prompt,
     };
 
     const imgMsgId = Date.now().toString() + '-img';
-
-    const imgMsg = {
+    const imgMsg: ImageMessage = {
       id: imgMsgId,
-      role: 'image',
-      image: imgUrl,
+      role: 'image' as const,
+      image: '',
       prompt,
-      status: 'done',
+      status: 'loading' as const,
     };
 
+    // Add messages with loading state
     setConversations(prev =>
       prev.map(c =>
         c.id === selectedConv.id
@@ -108,21 +109,57 @@ export default function ImageMode() {
     );
 
     setInput('');
+
+    // Simulate async image generation
+    setTimeout(() => {
+      const imgUrl = generateImage(prompt);
+      
+      setConversations(prev =>
+        prev.map(c =>
+          c.id === selectedConv.id
+            ? {
+                ...c,
+                messages: c.messages.map(m =>
+                  m.id === imgMsgId
+                    ? { ...m, image: imgUrl, status: 'done' as const }
+                    : m
+                ),
+              }
+            : c
+        )
+      );
+      setLoading(false);
+    }, 1500);
   };
 
   const regenerate = (msgId: string, prompt: string) => {
     const newUrl = generateImage(prompt, true);
-
+    
+    // Show loading state on regenerate
     setConversations(prev =>
       prev.map(c => ({
         ...c,
         messages: c.messages.map(m =>
           m.id === msgId
-            ? { ...m, image: newUrl }
+            ? { ...m, image: '', status: 'loading' as const }
             : m
         ),
       }))
     );
+
+    // Simulate async regeneration
+    setTimeout(() => {
+      setConversations(prev =>
+        prev.map(c => ({
+          ...c,
+          messages: c.messages.map(m =>
+            m.id === msgId
+              ? { ...m, image: newUrl, status: 'done' as const }
+              : m
+          ),
+        }))
+      );
+    }, 1000);
   };
 
   return (
@@ -188,10 +225,10 @@ export default function ImageMode() {
       </div>
 
       {/* MAIN IMAGE AREA */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
 
         {/* TOP HEADER */}
-        <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b bg-white">
+        <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b bg-white shrink-0">
           <div className="flex items-center gap-3">
             <button
               className="md:hidden"
@@ -199,7 +236,7 @@ export default function ImageMode() {
             >
               <Menu size={22} />
             </button>
-            <h2 className="font-semibold text-lg">
+            <h2 className="font-semibold text-lg truncate">
               {selectedConv?.title || 'Image Generation'}
             </h2>
           </div>
@@ -208,76 +245,83 @@ export default function ImageMode() {
         {selectedConv ? (
           <>
             {/* IMAGES AREA */}
-            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
-              {selectedConv.messages.map(msg => {
-                if (msg.role === 'user') {
+            <div className="flex-1 overflow-y-auto p-4 md:p-6">
+              <div className="max-w-4xl mx-auto space-y-6">
+                {selectedConv.messages.map(msg => {
+                  if (msg.role === 'user') {
+                    return (
+                      <div key={msg.id} className="flex justify-end">
+                        <div className="max-w-[85%] md:max-w-[75%] lg:max-w-[65%] rounded-2xl px-5 py-3 text-sm shadow-sm bg-blue-600 text-white break-words">
+                          <p className="whitespace-pre-wrap leading-relaxed">
+                            {msg.prompt}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  }
+
                   return (
-                    <div key={msg.id} className="flex justify-end">
-                      <div className="max-w-[85%] md:max-w-[65%] rounded-2xl px-5 py-3 text-sm shadow-sm bg-blue-600 text-white">
-                        <p className="whitespace-pre-wrap leading-relaxed">
-                          {msg.prompt}
-                        </p>
+                    <div key={msg.id} className="flex justify-start">
+                      <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm w-full md:w-auto max-w-full md:max-w-[75%] lg:max-w-[65%]">
+                        {msg.status === 'loading' && (
+                          <div className="flex items-center justify-center gap-2 py-8">
+                            <Loader2 className="animate-spin" size={24} />
+                            <span>Generating image...</span>
+                          </div>
+                        )}
+
+                        {msg.status === 'done' && msg.image && (
+                          <>
+                            <div className="flex justify-center">
+                              <img
+                                key={msg.image}
+                                src={msg.image}
+                                className="w-full h-auto max-w-full rounded-lg shadow object-contain"
+                                referrerPolicy="no-referrer"
+                                alt={msg.prompt}
+                                style={{ maxHeight: '512px' }}
+                              />
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mt-3 text-xs">
+                              <span className="text-gray-500 truncate w-full sm:max-w-[200px] md:max-w-[300px]">
+                                {msg.prompt}
+                              </span>
+
+                              <button
+                                onClick={() => regenerate(msg.id, msg.prompt!)}
+                                disabled={loading}
+                                className="flex items-center gap-1 text-blue-600 hover:text-blue-800 transition shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+                                Regenerate
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   );
-                }
-
-                return (
-                  <div key={msg.id} className="flex justify-start">
-                    <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm max-w-[85%] md:max-w-[65%]">
-                      {msg.status === 'loading' && (
-                        <div className="flex items-center gap-2">
-                          <Loader2 className="animate-spin" />
-                          Generating...
-                        </div>
-                      )}
-
-                      {msg.status === 'done' && (
-                        <>
-                          <img
-                            key={msg.image}
-                            src={msg.image}
-                            className="max-w-xs md:max-w-sm rounded-lg mx-auto shadow"
-                            referrerPolicy="no-referrer"
-                            alt={msg.prompt}
-                          />
-
-                          <div className="flex justify-between items-center mt-3 text-xs">
-                            <span className="text-gray-500 truncate max-w-[200px]">
-                              {msg.prompt}
-                            </span>
-
-                            <button
-                              onClick={() => regenerate(msg.id, msg.prompt!)}
-                              className="flex items-center gap-1 text-blue-600 hover:text-blue-800 transition"
-                            >
-                              <RefreshCw size={14} />
-                              Regenerate
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-              <div ref={messagesEndRef} />
+                })}
+                <div ref={messagesEndRef} />
+              </div>
             </div>
 
             {/* INPUT AREA */}
-            <div className="border-t bg-white p-4">
+            <div className="border-t bg-white p-4 shrink-0">
               <div className="flex gap-3 max-w-4xl mx-auto">
                 <input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && !loading && handleGenerate()}
                   placeholder="Enter prompt to generate image..."
-                  className="flex-1 px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="flex-1 px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm md:text-base"
+                  disabled={loading}
                 />
                 <button
                   onClick={handleGenerate}
                   disabled={loading || !input.trim()}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center shadow-sm"
+                  className="px-4 md:px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center shadow-sm shrink-0"
                 >
                   {loading ? (
                     <Loader2 className="animate-spin" size={20} />
@@ -289,7 +333,7 @@ export default function ImageMode() {
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-gray-400">
+          <div className="flex-1 flex items-center justify-center text-gray-400 p-4 text-center">
             Select or create a conversation to start generating images
           </div>
         )}
