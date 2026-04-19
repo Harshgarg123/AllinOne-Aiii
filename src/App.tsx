@@ -3,6 +3,7 @@ import RagMode from "./components/modes/RagMode";
 import ChatMode from "./components/modes/ChatMode";
 import BlogMode from "./components/modes/BlogMode";
 import CodeMode from "./components/modes/CodeMode";
+import ImageMode from "./components/modes/ImageMode";
 import {
   FileText,
   MessageSquare,
@@ -15,9 +16,10 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
+  ImageIcon,
 } from "lucide-react";
 
-type Mode = "rag" | "chat" | "blog" | "code";
+type Mode = "rag" | "chat" | "blog" | "code" | "image";
 
 function App() {
   const [activeMode, setActiveMode] = useState<Mode>("chat");
@@ -30,8 +32,6 @@ function App() {
     const savedKey = localStorage.getItem("user_api_key");
     if (savedKey) {
       setApiKey(savedKey);
-      // Optional: auto-validate on load if you want
-      // validateKey(savedKey);
     }
   }, []);
 
@@ -51,16 +51,13 @@ function App() {
       });
 
       if (response.ok) {
-        // 200 → valid key (we got models list)
         setKeyStatus("valid");
         return true;
       } else if (response.status === 401 || response.status === 403) {
-        // Unauthorized / Forbidden → invalid key
         setKeyStatus("invalid");
         alert("Invalid Groq API key. Please check and try again.");
         return false;
       } else {
-        // Other errors (rate limit, network, etc.)
         const errorData = await response.json().catch(() => ({}));
         alert(`Validation failed: ${response.status} - ${errorData.error?.message || "Unknown error"}`);
         setKeyStatus("invalid");
@@ -82,32 +79,30 @@ function App() {
       alert("Please enter a valid Groq API key.");
       return;
     }
-
     const isValid = await validateKey(trimmedKey);
-
     if (isValid) {
       localStorage.setItem("user_api_key", trimmedKey);
       alert("API key is valid and saved successfully! ✅");
     }
-    // If invalid, alert already shown in validateKey
   };
 
   const modes = [
-    { id: "chat" as Mode, name: "Chat", icon: MessageSquare },
-    { id: "rag" as Mode, name: "RAG", icon: FileText },
-    { id: "blog" as Mode, name: "Blog", icon: PenTool },
-    { id: "code" as Mode, name: "Code", icon: Code2 },
+    { id: "chat"  as Mode, name: "Chat",   icon: MessageSquare },
+    { id: "rag"   as Mode, name: "RAG",    icon: FileText      },
+    { id: "blog"  as Mode, name: "Blog",   icon: PenTool       },
+    { id: "code"  as Mode, name: "Code",   icon: Code2         },
+    { id: "image" as Mode, name: "Image",  icon: ImageIcon     }, // ← added
   ];
 
-  const hasKey = !!apiKey.trim();
+  const hasKey    = !!apiKey.trim();
   const isKeyValid = keyStatus === "valid";
 
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100">
+
       {/* HEADER */}
       <header className="bg-white border-b shadow-sm">
         <div className="max-w-screen-2xl mx-auto px-4 py-3 flex items-center justify-between">
-          {/* Left Section */}
           <div className="flex items-center gap-3">
             <button className="md:hidden" onClick={() => setSidebarOpen(true)}>
               <Menu size={22} />
@@ -149,6 +144,7 @@ function App() {
       </header>
 
       <div className="flex flex-1 overflow-hidden">
+
         {/* SIDEBAR */}
         <aside
           className={`fixed md:static top-0 left-0 h-full w-64 bg-white border-r p-4 z-50 transform transition-transform duration-300
@@ -173,7 +169,10 @@ function App() {
                     setSidebarOpen(false);
                   }}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition font-medium text-sm
-                    ${isActive ? "bg-blue-50 text-blue-700 border border-blue-500" : "text-gray-700 hover:bg-gray-50 border border-transparent"}`}
+                    ${isActive
+                      ? "bg-blue-50 text-blue-700 border border-blue-500"
+                      : "text-gray-700 hover:bg-gray-50 border border-transparent"
+                    }`}
                 >
                   <Icon size={18} />
                   {mode.name}
@@ -195,7 +194,7 @@ function App() {
                 value={apiKey}
                 onChange={(e) => {
                   setApiKey(e.target.value);
-                  setKeyStatus("unknown"); // Reset status on change
+                  setKeyStatus("unknown");
                 }}
                 placeholder="gsk_..."
                 className="w-full bg-transparent outline-none text-sm placeholder-gray-400"
@@ -236,6 +235,7 @@ function App() {
               <li><strong>RAG:</strong> Ask questions about your documents</li>
               <li><strong>Blog:</strong> Generate blog posts</li>
               <li><strong>Code:</strong> Code help & generation</li>
+              <li><strong>Image:</strong> Generate images from text</li>{/* ← added */}
             </ul>
           </div>
         </aside>
@@ -248,10 +248,11 @@ function App() {
         )}
 
         <main className="flex-1 p-4 md:p-6 overflow-auto">
-          {activeMode === "rag" && <RagMode />}
-          {activeMode === "chat" && <ChatMode />}
-          {activeMode === "blog" && <BlogMode />}
-          {activeMode === "code" && <CodeMode />}
+          {activeMode === "rag"   && <RagMode />}
+          {activeMode === "chat"  && <ChatMode />}
+          {activeMode === "blog"  && <BlogMode />}
+          {activeMode === "code"  && <CodeMode />}
+          {activeMode === "image" && <ImageMode />}
         </main>
       </div>
     </div>
